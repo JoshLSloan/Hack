@@ -64,7 +64,7 @@ public class Parser {
 	public String dest () {
 		String current = commands.get(currentCommand);
 		if (!current.contains("=")) {
-			return "";
+			return null;
 		}
 		
 		int a = current.indexOf('=');
@@ -101,7 +101,7 @@ public class Parser {
 	public String jump () {
 		String current = commands.get(currentCommand);
 		if (!current.contains(";")) {
-			return "";
+			return null;
 		}
 		
 		int a = current.indexOf(';') + 1;
