@@ -10,6 +10,7 @@ public class Parser {
 	
 	private Scanner scan;
 	private List<String> commands = new ArrayList<>();
+	private int currentCommand = 0;
 	
 	public static final int A_COMMAND = 1;
 	public static final int C_COMMAND = 2;
@@ -27,7 +28,86 @@ public class Parser {
 	}
 	
 	public boolean hasMoreCommands () {
-		return scan.hasNextLine();
+		return currentCommand < commands.size();
+	}
+	
+	public boolean advance () {
+		if (hasMoreCommands()) {
+			currentCommand++;
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public int commandType () {
+		if (commands.get(currentCommand).charAt(0) == '@') {
+			return A_COMMAND;
+		} else if (commands.get(currentCommand).charAt(0) == '(') {
+			return L_COMMAND;
+		} else {
+			return C_COMMAND;
+		}
+	}
+	 // Currently assuming its not invoked if on c command
+	public String symbol () {
+		String current = commands.get(currentCommand);
+		if (commandType() == A_COMMAND) {
+			return current.substring(1);
+		} else if (commandType() == L_COMMAND){
+			return current.substring(1, current.length()-1);
+		} else {
+			return "";
+		}
+	}
+	
+	public String dest () {
+		String current = commands.get(currentCommand);
+		if (!current.contains("=")) {
+			return "";
+		}
+		
+		int a = current.indexOf('=');
+		
+		return current.substring(0,a);
+	}
+		
+	public String comp () {
+		
+		if (commandType() != C_COMMAND) {
+			return "";
+		}
+		
+		String current = commands.get(currentCommand);
+		int a = 0;
+		int b = 0;
+		
+		if (current.contains("=")) {
+			a = current.indexOf('=') + 1;
+		}
+		
+		if (current.contains(";")) {
+			b = current.indexOf(';');
+		} else {
+			b = current.length();
+		}
+		
+		return current.substring(a, b);
+		
+	}
+	
+
+	
+	public String jump () {
+		String current = commands.get(currentCommand);
+		if (!current.contains(";")) {
+			return "";
+		}
+		
+		int a = current.indexOf(';') + 1;
+		
+		return current.substring(a, current.length());
+		
 	}
 	 
 	private void readCommands () {

@@ -8,14 +8,13 @@ public class Driver {
 			System.out.println("USAGE: java Driver <fileName>");
 			System.exit(0);
 		}
-		
+	
 		assemble(args[0]);
-
 	}
 	
 	public static void assemble (String fileName) {
 		
 		Parser parser = new Parser(fileName);
-	}
 
+	}
 }
