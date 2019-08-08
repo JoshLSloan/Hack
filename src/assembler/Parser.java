@@ -27,6 +27,10 @@ public class Parser {
 		readCommands();
 	}
 	
+	public void reset () {
+		currentCommand = 0;
+	}
+	
 	public boolean hasMoreCommands () {
 		return currentCommand < commands.size();
 	}
@@ -111,6 +115,7 @@ public class Parser {
 	}
 	 
 	private void readCommands () {
+		
 		while (scan.hasNextLine()) {
 			String s = scan.nextLine();
 			
@@ -129,9 +134,11 @@ public class Parser {
 				}
 			}
 			
+			commands.add(s);
+			
 			// Later I should add more processing to determine if its a valid command.
 			// For now I assume at this point it is
-			commands.add(s);
+			
 		}
 	}
 }

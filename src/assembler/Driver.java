@@ -1,7 +1,112 @@
 package assembler;
 
-public class Driver {
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
+public class Driver {
+	
+	private SymbolTable st;
+	private String file;
+	private Parser parser;
+
+
+	public Driver (String pFileName) {
+		file = pFileName;
+		st = new SymbolTable();
+		parser = new Parser(file + ".asm");
+	}
+	
+	public void assemble () {
+		
+		buildSymbolTable();
+		
+		Code code = new Code();
+		StringBuilder sb = new StringBuilder(16);
+		
+		
+		BufferedWriter w = null;
+		try {
+			w = new BufferedWriter(new FileWriter(file + ".hack"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+				
+		parser.reset();
+		
+		int ram = 16;
+		
+		while(parser.hasMoreCommands()) {
+			if (parser.commandType() == Parser.A_COMMAND) {
+				sb.append("0");
+				
+				if (Character.isDigit(parser.symbol().charAt(0))) {
+					// Not a symbol
+					String binary = String.format("%15s",
+							Integer.toBinaryString(Integer.parseInt(parser.symbol()))); //Negatives?
+					binary = binary.replaceAll("\\s", "0");
+					sb.append(binary);
+				} else {
+					// Its a symbol
+					if (st.contains(parser.symbol())) {
+						sb.append(st.getAddress(parser.symbol()));
+					} else {
+						st.addEntry(parser.symbol(), ram);
+						ram++;
+						sb.append(st.getAddress(parser.symbol()));
+					}
+				}
+				
+							
+			} else if (parser.commandType() == Parser.C_COMMAND){
+				sb.append("111");
+				sb.append(code.comp(parser.comp()));
+				sb.append(code.dest(parser.dest()));
+				sb.append(code.jump(parser.jump()));
+			} else {
+				sb.setLength(0);
+				parser.advance();
+				continue;
+			}
+			
+			sb.append("\n");
+			
+			try {
+				w.write(sb.toString());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			sb.setLength(0);
+			parser.advance();
+		}
+		
+		try {
+			w.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+	
+	private void buildSymbolTable () {
+		parser.reset();
+		
+		int rom = 0;
+		
+		while (parser.hasMoreCommands()) {
+			if (parser.commandType() == Parser.L_COMMAND) {
+				this.st.addEntry(parser.symbol(), rom);
+			} else {
+				rom++;
+			}
+			
+			parser.advance();
+		}
+		
+		parser.reset();
+	}
+	
 	public static void main(String[] args) {
 		
 		if (args.length < 1) {
@@ -9,37 +114,7 @@ public class Driver {
 			System.exit(0);
 		}
 	
-		assemble(args[0]);
-	}
-	
-	public static void assemble (String fileName) {
-		
-		Parser parser = new Parser(fileName);
-		Code code = new Code();
-		StringBuilder sb = new StringBuilder(16);
-		
-		while(parser.hasMoreCommands()) {
-			if (parser.commandType() == Parser.A_COMMAND) {
-				sb.append("0");
-				
-				String binary = String.format("%15s", Integer.toBinaryString(Integer.parseInt(parser.symbol()))); //Negatives?
-				binary = binary.replaceAll("\\s", "0");
-				
-				
-				sb.append(binary);
-				
-				
-			} else {
-				sb.append("111");
-				sb.append(code.comp(parser.comp()));
-				sb.append(code.dest(parser.dest()));
-				sb.append(code.jump(parser.jump()));
-			}
-			
-			System.out.println(sb.toString());
-			sb.setLength(0);
-			parser.advance();
-		}
-
+		Driver d = new Driver(args[0]);
+		d.assemble();
 	}
 }
