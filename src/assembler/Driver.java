@@ -10,83 +10,63 @@ public class Driver {
 	private String file;
 	private Parser parser;
 
-
 	public Driver (String pFileName) {
 		file = pFileName;
 		st = new SymbolTable();
 		parser = new Parser(file + ".asm");
+		buildSymbolTable();
 	}
 	
 	public void assemble () {
-		
-		buildSymbolTable();
-		
-		Code code = new Code();
-		StringBuilder sb = new StringBuilder(16);
-		
-		
-		BufferedWriter w = null;
-		try {
-			w = new BufferedWriter(new FileWriter(file + ".hack"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-				
-		parser.reset();
-		
-		int ram = 16;
-		
-		while(parser.hasMoreCommands()) {
-			if (parser.commandType() == Parser.A_COMMAND) {
-				sb.append("0");
-				
-				if (Character.isDigit(parser.symbol().charAt(0))) {
-					// Not a symbol
-					String binary = String.format("%15s",
-							Integer.toBinaryString(Integer.parseInt(parser.symbol()))); //Negatives?
-					binary = binary.replaceAll("\\s", "0");
-					sb.append(binary);
-				} else {
-					// Its a symbol
-					if (st.contains(parser.symbol())) {
-						sb.append(st.getAddress(parser.symbol()));
+	
+		try (BufferedWriter w = new BufferedWriter(new FileWriter(file + ".hack"))) {
+			Code code = new Code();
+			StringBuilder sb = new StringBuilder(16);
+			parser.reset();
+			
+			int ram = 16;
+			while(parser.hasMoreCommands()) {
+				if (parser.commandType() == Parser.A_COMMAND) {
+					sb.append("0");
+					
+					if (Character.isDigit(parser.symbol().charAt(0))) {
+						// Not a symbol
+						String binary = String.format("%15s",
+								Integer.toBinaryString(Integer.parseInt(parser.symbol())));
+						binary = binary.replaceAll("\\s", "0");
+						sb.append(binary);
 					} else {
-						st.addEntry(parser.symbol(), ram);
-						ram++;
-						sb.append(st.getAddress(parser.symbol()));
+						// Its a symbol
+						if (st.contains(parser.symbol())) {
+							sb.append(st.getAddress(parser.symbol()));
+						} else {
+							st.addEntry(parser.symbol(), ram);
+							ram++;
+							sb.append(st.getAddress(parser.symbol()));
+						}
 					}
+		
+				} else if (parser.commandType() == Parser.C_COMMAND){
+					sb.append("111");
+					sb.append(code.comp(parser.comp()));
+					sb.append(code.dest(parser.dest()));
+					sb.append(code.jump(parser.jump()));
+				} else {
+					sb.setLength(0);
+					parser.advance();
+					continue;
 				}
 				
-							
-			} else if (parser.commandType() == Parser.C_COMMAND){
-				sb.append("111");
-				sb.append(code.comp(parser.comp()));
-				sb.append(code.dest(parser.dest()));
-				sb.append(code.jump(parser.jump()));
-			} else {
+				sb.append("\n");
+				w.write(sb.toString());
+				
 				sb.setLength(0);
 				parser.advance();
-				continue;
 			}
-			
-			sb.append("\n");
-			
-			try {
-				w.write(sb.toString());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
-			sb.setLength(0);
-			parser.advance();
-		}
-		
-		try {
-			w.close();
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 	
 	private void buildSymbolTable () {

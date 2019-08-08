@@ -40,7 +40,6 @@ public class Parser {
 			currentCommand++;
 			return true;
 		}
-		
 		return false;
 	}
 	
@@ -53,7 +52,7 @@ public class Parser {
 			return C_COMMAND;
 		}
 	}
-	 // Currently assuming its not invoked if on c command
+
 	public String symbol () {
 		String current = commands.get(currentCommand);
 		if (commandType() == A_COMMAND) {
@@ -72,7 +71,6 @@ public class Parser {
 		}
 		
 		int a = current.indexOf('=');
-		
 		return current.substring(0,a);
 	}
 		
@@ -97,7 +95,6 @@ public class Parser {
 		}
 		
 		return current.substring(a, b);
-		
 	}
 	
 
@@ -109,9 +106,7 @@ public class Parser {
 		}
 		
 		int a = current.indexOf(';') + 1;
-		
 		return current.substring(a, current.length());
-		
 	}
 	 
 	private void readCommands () {
@@ -135,10 +130,6 @@ public class Parser {
 			}
 			
 			commands.add(s);
-			
-			// Later I should add more processing to determine if its a valid command.
-			// For now I assume at this point it is
-			
 		}
 	}
 }
