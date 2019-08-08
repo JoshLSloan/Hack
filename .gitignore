@@ -1,0 +1,6 @@
+/bin/
+*.asm
+*.hack
+.classpath
+.md
+.project

@@ -103,7 +103,6 @@ public class Driver {
 			
 			parser.advance();
 		}
-		
 		parser.reset();
 	}
 	

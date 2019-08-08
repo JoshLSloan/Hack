@@ -5,17 +5,14 @@ import java.util.HashMap;
 public class SymbolTable {
 
 	private HashMap<String, String> symbols = new HashMap<>();
-	private int iAddress = 16;
 	
 	public SymbolTable () {
 		
-		// 15 BITS RIGHT?
-		
 		symbols.put("SP", "000000000000000");
 		symbols.put("LCL", "000000000000001");
-		symbols.put("ARG", "000000000000002");
-		symbols.put("THIS", "000000000000003");
-		symbols.put("THAT", "000000000000004");
+		symbols.put("ARG", "000000000000010");
+		symbols.put("THIS", "000000000000011");
+		symbols.put("THAT", "000000000000100");
 		symbols.put("R0", "000000000000000");
 		symbols.put("R1", "000000000000001");
 		symbols.put("R2", "000000000000010");
@@ -35,7 +32,6 @@ public class SymbolTable {
 		symbols.put("SCREEN", "100000000000000");
 		symbols.put("KBD", "110000000000000");
 		
-		//System.out.println(symbols);
 	}
 	
 	public void addEntry (String symbol, int pAddress) {
