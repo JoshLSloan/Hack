@@ -12,6 +12,9 @@ public class CodeWriter {
 	private static int GT_INC = 0;
 	private static int LT_INC = 0;
 	
+	private static final int PNT_IDX = 3;
+	private static final int TMP_IDX = 5;
+	
 	private static final String BINARY_START = 
 			"@SP\n"
 			+ "M=M-1\n"
@@ -21,17 +24,30 @@ public class CodeWriter {
 			+ "M=M-1\n"
 			+ "A=M\n";
 	
-	private static final String BINARY_END =
+	private static final String POP = 
+			"A=M+D\n"
+			+ "D=A\n"
+			+ "@R13\n"
+			+ "M=D\n"
+			+ "@SP\n"
+			+ "M=M-1\n"
+			+ "A=M\n"
+			+ "D=M\n"
+			+ "@R13\n"
+			+ "A=M\n"
+			+ "M=D\n";
+	
+	private static final String PUSH_D =
 			"@SP\n"
 			+ "A=M\n"
 			+ "M=D\n"
 			+ "@SP\n"
 			+ "M=M+1\n";
 
-	private static final String ADD_CMD = BINARY_START + "D=M+D\n" + BINARY_END;
-	private static final String SUB_CMD = BINARY_START + "D=M-D\n" + BINARY_END;
-	private static final String AND_CMD = BINARY_START + "D=M&D\n" + BINARY_END;
-	private static final String OR_CMD = BINARY_START + "D=M|D\n" + BINARY_END;
+	private static final String ADD_CMD = BINARY_START + "D=M+D\n" + PUSH_D;
+	private static final String SUB_CMD = BINARY_START + "D=M-D\n" + PUSH_D;
+	private static final String AND_CMD = BINARY_START + "D=M&D\n" + PUSH_D;
+	private static final String OR_CMD = BINARY_START + "D=M|D\n" + PUSH_D;
 	
 	private static final String NEG_CMD =
 			"@SP\n"
@@ -56,6 +72,7 @@ public class CodeWriter {
 			+ "M=D\n"
 			+ "@SP\n"
 			+ "M=M+1\n";
+	
 	
 	private static final String END = 
 			"(END)\n"
@@ -138,18 +155,85 @@ public class CodeWriter {
 			e.printStackTrace();
 		}
 	}
-	
+	 // Enumerations for pSegment, pCommand ?
 	public void writePushPop (String pCommand, String pSegment, String pIndex) {
 		
 		sb.setLength(0);
-		
-		if (pCommand.equals("push") && pSegment.equals("constant")) {
-			sb.append("@");
-			sb.append(pIndex);
-			sb.append("\n");
-			sb.append(PUSH_CNST);
+		if (pCommand.equals("push")) {
+			if (pSegment.equals("constant")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append(PUSH_CNST);
+			} else if (pSegment.equals("local")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@LCL\n");
+				sb.append("A=M+D\n");
+				sb.append("D=M\n");
+				sb.append(PUSH_D);
+			} else if (pSegment.equals("argument")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@ARG\n");
+				sb.append("A=M+D\n");
+				sb.append("D=M\n");
+				sb.append(PUSH_D);
+			} else if (pSegment.equals("this")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@THIS\n");
+				sb.append("A=M+D\n");
+				sb.append("D=M\n");
+				sb.append(PUSH_D);
+			} else if (pSegment.equals("that")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@THAT\n");
+				sb.append("A=M+D\n");
+				sb.append("D=M\n");
+				sb.append(PUSH_D);
+			} else if (pSegment.equals("temp")) {
+	
+				int i = TMP_IDX + Integer.parseInt(pIndex);
+				
+				sb.append("@" + i + "\n");
+				sb.append("D=M\n");
+				sb.append(PUSH_D);
+			}
+		} else {
+			if (pSegment.equals("local")) {
+				System.out.println("LOCAL POP");
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@LCL\n");
+				sb.append(POP);
+			} else if (pSegment.equals("argument")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@ARG\n");
+				sb.append(POP);
+			} else if (pSegment.equals("this")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@THIS\n");
+				sb.append(POP);
+			} else if (pSegment.equals("that")) {
+				sb.append("@" + pIndex + "\n");
+				sb.append("D=A\n");
+				sb.append("@THAT\n");
+				sb.append(POP);
+			} else if (pSegment.equals("temp")) {
+				sb.append("@SP\n");
+				sb.append("M=M-1\n");
+				sb.append("A=M\n");
+				sb.append("D=M\n");
+				
+				int i = TMP_IDX + Integer.parseInt(pIndex);
+				
+				sb.append("@" + i + "\n");
+				sb.append("M=D\n");
+			}
 		}
-		
+			
 		try {
 			w.write(sb.toString());
 			sb.setLength(0);

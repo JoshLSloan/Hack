@@ -29,7 +29,7 @@ public class Driver {
 			w.write("// " + parse.getCurrentCommand() + "\n");
 			if (parse.commandType() == Parser.C_ARITHMETIC) {
 				code.writeArithmetic(parse.com());
-			} else if (parse.commandType() == Parser.C_PUSH) {
+			} else if (parse.commandType() == Parser.C_PUSH || parse.commandType() == Parser.C_POP) {
 				code.writePushPop(parse.com(), parse.arg1(), parse.arg2());
 			}
 			
