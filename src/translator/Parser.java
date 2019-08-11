@@ -34,11 +34,6 @@ public class Parser {
 		
 		readCommands();
 		advance();
-		
-		while (hasMoreCommands()) {
-			System.out.println("c: " + com() + " arg1: " + arg1() + " arg2: " + arg2());
-			advance();
-		}
 	}
 	
 	public boolean hasMoreCommands () {
@@ -69,8 +64,7 @@ public class Parser {
 	}
 	
 	/**
-	 * Returns the type of the current command.  For now only set up for C_ARITHEMETIC,
-	 * C_PUSH, and C_POP
+	 * Returns the type of the current command. 
 	 * @return The type of the current command.
 	 */
 	public int commandType () {
@@ -107,12 +101,15 @@ public class Parser {
 		return arg2;
 	}
 	
+	public String getCurrentCommand() {
+		return commands.get(currentCommand);
+	}
+	
 	private void readCommands () {
 		
 		while (scan.hasNextLine()) {
 			String s = scan.nextLine();
 			
-			//s = s.replaceAll("\\s+",""); 
 			s = s.trim();
 			
 			// Check if line is blank or entire line is a comment
