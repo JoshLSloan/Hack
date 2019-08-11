@@ -8,7 +8,9 @@ public class CodeWriter {
 	private BufferedWriter w;
 	private StringBuilder sb = new StringBuilder();
 	
-	private static int BOOL_INC = 0;
+	private static int EQ_INC = 0;
+	private static int GT_INC = 0;
+	private static int LT_INC = 0;
 	
 	private static final String BINARY_START = 
 			"@SP\n"
@@ -28,12 +30,22 @@ public class CodeWriter {
 
 	private static final String ADD_CMD = BINARY_START + "D=M+D\n" + BINARY_END;
 	private static final String SUB_CMD = BINARY_START + "D=M-D\n" + BINARY_END;
+	private static final String AND_CMD = BINARY_START + "D=M&D\n" + BINARY_END;
+	private static final String OR_CMD = BINARY_START + "D=M|D\n" + BINARY_END;
 	
 	private static final String NEG_CMD =
 			"@SP\n"
 			+ "M=M-1\n"
 			+ "A=M\n"
 			+ "M=-M\n"
+			+ "@SP\n"
+			+ "M=M+1\n";
+	
+	private static final String NOT_CMD =
+			"@SP\n"
+			+ "M=M-1\n"
+			+ "A=M\n"
+			+ "M=!M\n"
 			+ "@SP\n"
 			+ "M=M+1\n";
 	
@@ -70,16 +82,56 @@ public class CodeWriter {
 					+ "@SP\n"
 					+ "A=M\n"
 					+ "M=-1\n"
-					+ "@EQUAL." + BOOL_INC + "\n"
+					+ "@EQUAL." + EQ_INC + "\n"
 					+ "D;JEQ\n"
 					+ "@SP\n"
 					+ "A=M\n"
 					+ "M=0\n"
-					+ "(EQUAL." + BOOL_INC + ")\n"
+					+ "(EQUAL." + EQ_INC + ")\n"
 					+ "@SP\n"
 					+ "M=M+1\n";
 				w.write(tmp);
-				BOOL_INC++;
+				EQ_INC++;
+			} else if (cmd.equals("gt")) {
+				String tmp =
+					BINARY_START
+					+ "D=M-D\n"
+					+ "@SP\n"
+					+ "A=M\n"
+					+ "M=-1\n"
+					+ "@GT." + GT_INC + "\n"
+					+ "D;JGT\n"
+					+ "@SP\n"
+					+ "A=M\n"
+					+ "M=0\n"
+					+ "(GT." + GT_INC + ")\n"
+					+ "@SP\n"
+					+ "M=M+1\n";
+				w.write(tmp);
+				GT_INC++;
+			} else if (cmd.equals("lt")) {
+				String tmp =
+					BINARY_START
+					+ "D=M-D\n"
+					+ "@SP\n"
+					+ "A=M\n"
+					+ "M=-1\n"
+					+ "@LT." + LT_INC + "\n"
+					+ "D;JLT\n"
+					+ "@SP\n"
+					+ "A=M\n"
+					+ "M=0\n"
+					+ "(LT." + LT_INC + ")\n"
+					+ "@SP\n"
+					+ "M=M+1\n";
+				w.write(tmp);
+				LT_INC++;
+			} else if (cmd.equals("and")) {
+				w.write(AND_CMD);
+			} else if (cmd.equals("or")) {
+				w.write(OR_CMD);
+			} else if (cmd.equals("not")) {
+				w.write(NOT_CMD);
 			}
 			
 		} catch (IOException e) {

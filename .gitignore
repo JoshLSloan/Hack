@@ -1,6 +1,7 @@
 /bin/
 *.asm
 *.hack
+*.vm
 .classpath
 .md
 .project
