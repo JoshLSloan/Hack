@@ -1,6 +1,7 @@
 package translator;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -15,16 +16,18 @@ public class VMTranslator {
 		
 
 		String[] file = args[0].split("\\.");
+		String fileName = null;
 		// Do this in CodeWriter in the future
 		BufferedWriter w = null;
 		try {
+			fileName = new File(args[0]).getName();
 			w = new BufferedWriter(new FileWriter(file[0] + ".asm"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 		Parser parse = new Parser(args[0]);
-		CodeWriter code = new CodeWriter(w, file[0]);
+		CodeWriter code = new CodeWriter(w, fileName);
 
 		while (parse.hasMoreCommands()) {
 			w.write("// " + parse.getCurrentCommand() + "\n");

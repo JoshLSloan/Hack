@@ -26,7 +26,8 @@ public class Parser {
 	public Parser (String fileName) {
 		
 		try {
-			File file = new File(fileName);
+			String t = fileName;
+			File file = new File(t);
 			scan = new Scanner(file);
 		} catch (FileNotFoundException e) {
 			System.out.println("File not found!");
