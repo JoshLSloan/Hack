@@ -7,6 +7,7 @@ public class CodeWriter {
 	
 	private BufferedWriter w;
 	private StringBuilder sb = new StringBuilder();
+	private String fileName;
 	
 	private static int EQ_INC = 0;
 	private static int GT_INC = 0;
@@ -79,8 +80,9 @@ public class CodeWriter {
 			+ "@END\n"
 			+ "0;JMP";
 	
-	public CodeWriter (BufferedWriter pW) {
+	public CodeWriter (BufferedWriter pW, String pFileName) {
 		w = pW;
+		fileName = pFileName;
 	}
 	
 	public void writeArithmetic (String cmd) {
@@ -198,6 +200,16 @@ public class CodeWriter {
 				sb.append("@" + i + "\n");
 				sb.append("D=M\n");
 				sb.append(PUSH_D);
+			} else if (pSegment.equals("pointer")) {
+				int i = PNT_IDX + Integer.parseInt(pIndex);
+				
+				sb.append("@" + i + "\n");
+				sb.append("D=M\n");
+				sb.append(PUSH_D);
+			} else if (pSegment.equals("static")) {
+				sb.append("@" + fileName + "." + pIndex + "\n");
+				sb.append("D=M\n");
+				sb.append(PUSH_D);
 			}
 		} else {
 			if (pSegment.equals("local")) {
@@ -230,6 +242,23 @@ public class CodeWriter {
 				int i = TMP_IDX + Integer.parseInt(pIndex);
 				
 				sb.append("@" + i + "\n");
+				sb.append("M=D\n");
+			} else if (pSegment.equals("pointer")) {
+				sb.append("@SP\n");
+				sb.append("M=M-1\n");
+				sb.append("A=M\n");
+				sb.append("D=M\n");
+				
+				int i = PNT_IDX + Integer.parseInt(pIndex);
+				
+				sb.append("@" + i + "\n");
+				sb.append("M=D\n");
+			} else if (pSegment.equals("static")) {
+				sb.append("@SP\n");
+				sb.append("M=M-1\n");
+				sb.append("A=M\n");
+				sb.append("D=M\n");
+				sb.append("@" + fileName + "." + pIndex + "\n");
 				sb.append("M=D\n");
 			}
 		}

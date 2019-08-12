@@ -13,17 +13,18 @@ public class Driver {
 			System.exit(0);
 		}
 		
+
+		String[] file = args[0].split("\\.");
 		// Do this in CodeWriter in the future
 		BufferedWriter w = null;
 		try {
-			String[] file = args[0].split("\\.");
 			w = new BufferedWriter(new FileWriter(file[0] + ".asm"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 		Parser parse = new Parser(args[0]);
-		CodeWriter code = new CodeWriter(w);
+		CodeWriter code = new CodeWriter(w, file[0]);
 
 		while (parse.hasMoreCommands()) {
 			w.write("// " + parse.getCurrentCommand() + "\n");
