@@ -16,6 +16,13 @@ public class CodeWriter {
 	private static final int PNT_IDX = 3;
 	private static final int TMP_IDX = 5;
 	
+	private static final String INIT = 
+			"@256\n"
+			+ "D=A\n"
+			+ "@SP\n"
+			+ "M=D\n";
+	
+	
 	private static final String BINARY_START = 
 			"@SP\n"
 			+ "M=M-1\n"
@@ -80,10 +87,28 @@ public class CodeWriter {
 			+ "@END\n"
 			+ "0;JMP";
 	
-	public CodeWriter (BufferedWriter pW, String pFileName) {
+	public CodeWriter (BufferedWriter pW) {
 		w = pW;
-		fileName = pFileName;
 	}
+	
+	public void setFileName (String pFileName) {
+		this.fileName = pFileName;
+	}
+	
+	// Need to complete writing this call code correctly with write call
+	public void writeInit () {
+		try {
+			w.write(INIT);
+			writeCall("Sys.init$ret.0", "0", "Sys.init");
+			w.write("\n(Sys.init.loop)\n");
+			w.write("@Sys.init.loop\n");
+			w.write("0;JMP\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// public void writeCall (String pRet, String pArgs, String pFunction)
 	
 	public void writeArithmetic (String cmd) {
 		
@@ -213,7 +238,6 @@ public class CodeWriter {
 			}
 		} else {
 			if (pSegment.equals("local")) {
-				System.out.println("LOCAL POP");
 				sb.append("@" + pIndex + "\n");
 				sb.append("D=A\n");
 				sb.append("@LCL\n");
@@ -266,6 +290,167 @@ public class CodeWriter {
 		try {
 			w.write(sb.toString());
 			sb.setLength(0);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void writeLabel (String pLabel) {
+		try {
+			w.write("(" + fileName + "." + pLabel + ")\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void writeGoto (String pLabel) {
+		String tmp = 
+				"@" + fileName + "." + pLabel + "\n"
+				+ "0;JMP\n";
+		try {
+			w.write(tmp);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void writeIf (String pLabel) {
+		String tmp = 
+				"@SP\n"
+				+ "M=M-1\n"
+				+ "A=M\n"
+				+ "D=M\n"
+				+ "@" + fileName + "." + pLabel + "\n"
+				+ "D;JNE\n";
+		try {
+			w.write(tmp);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void writeFunction (String pLabel, int numLocals) {
+		writeLabel(pLabel);
+		for (int i = 0; i < numLocals; i++) {
+			writePushPop("push", "constant", "0");
+		}
+	}
+	
+	public void writeCall (String pRet, String pArgs, String pFunction) {
+		sb.setLength(0);
+		
+		sb.append("@" + pRet + "\n");
+		sb.append("D=A\n"); ////////////////
+		sb.append(PUSH_D);
+		
+		sb.append("@LCL\n");
+		sb.append("D=M\n");
+		sb.append(PUSH_D);
+		
+		sb.append("@ARG\n");
+		sb.append("D=M\n");
+		sb.append(PUSH_D);
+
+		sb.append("@THIS\n");
+		sb.append("D=M\n");
+		sb.append(PUSH_D);
+		
+		sb.append("@THAT\n");
+		sb.append("D=M\n");
+		sb.append(PUSH_D);
+		
+		int i = -(-Integer.parseInt(pArgs) - 5);
+		
+		sb.append("@" + i + "\n");
+		sb.append("D=A\n");
+		sb.append("@SP\n");
+		sb.append("D=M-D\n");
+		sb.append("@ARG\n");
+		sb.append("M=D\n");
+		
+		sb.append("@SP\n");
+		sb.append("D=M\n");
+		sb.append("@LCL\n");
+		sb.append("M=D\n");
+		
+		try {
+			w.write(sb.toString());	
+			writeGoto(pFunction);
+			w.write("(" + pRet + ")");
+		} catch (IOException e) {
+
+			e.printStackTrace();
+		}
+	}
+	
+	public void writeReturn() {
+		sb.setLength(0);
+		
+		sb.append("@LCL\n");
+		//sb.append("A=M\n");
+		
+		sb.append("D=M\n"); 
+		
+		sb.append("@R13\n");
+		sb.append("M=D\n"); //R13 is now story endFrame
+		
+		sb.append("@5\n");
+		sb.append("A=D-A\n"); 
+		sb.append("D=M\n"); // D has return address
+		sb.append("@R14\n");
+		sb.append("M=D\n"); //Storing return address in R14
+		
+		sb.append("@SP\n");
+		sb.append("M=M-1\n");
+		sb.append("A=M\n");
+		sb.append("D=M\n"); // D is the return value
+		sb.append("@ARG\n");
+		sb.append("A=M\n");
+		sb.append("M=D\n"); // Puts return value in arg 0
+		
+		sb.append("@ARG\n");
+		sb.append("D=M\n");
+		sb.append("@SP\n");
+		sb.append("M=D+1\n"); // SP repositioned
+		
+		sb.append("@R13\n");
+		sb.append("D=M\n");
+		sb.append("@1\n");
+		sb.append("A=D-A\n");
+		sb.append("D=M\n");
+		sb.append("@THAT\n");
+		sb.append("M=D\n");
+		
+		sb.append("@R13\n");
+		sb.append("D=M\n");
+		sb.append("@2\n");
+		sb.append("A=D-A\n");
+		sb.append("D=M\n");
+		sb.append("@THIS\n");
+		sb.append("M=D\n");
+		
+		sb.append("@R13\n");
+		sb.append("D=M\n");
+		sb.append("@3\n");
+		sb.append("A=D-A\n");
+		sb.append("D=M\n");
+		sb.append("@ARG\n");
+		sb.append("M=D\n");
+		
+		sb.append("@R13\n");
+		sb.append("D=M\n");
+		sb.append("@4\n");
+		sb.append("A=D-A\n");
+		sb.append("D=M\n");
+		sb.append("@LCL\n");
+		sb.append("M=D\n");
+		
+		sb.append("@R14\n");
+		sb.append("A=M\n");
+		sb.append("0;JMP\n");
+		
+		try {
+			w.write(sb.toString());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
