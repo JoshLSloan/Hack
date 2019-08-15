@@ -297,7 +297,7 @@ public class CodeWriter {
 	
 	public void writeLabel (String pLabel) {
 		try {
-			w.write("(" + fileName + "." + pLabel + ")\n");
+			w.write("(" /*+ fileName + "."*/ + pLabel + ")\n");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -305,7 +305,7 @@ public class CodeWriter {
 	
 	public void writeGoto (String pLabel) {
 		String tmp = 
-				"@" + fileName + "." + pLabel + "\n"
+				"@" +/* fileName + "." +*/ pLabel + "\n"
 				+ "0;JMP\n";
 		try {
 			w.write(tmp);
@@ -320,7 +320,7 @@ public class CodeWriter {
 				+ "M=M-1\n"
 				+ "A=M\n"
 				+ "D=M\n"
-				+ "@" + fileName + "." + pLabel + "\n"
+				+ "@" /*+ fileName + "."*/ + pLabel + "\n"
 				+ "D;JNE\n";
 		try {
 			w.write(tmp);
@@ -340,7 +340,7 @@ public class CodeWriter {
 		sb.setLength(0);
 		
 		sb.append("@" + pRet + "\n");
-		sb.append("D=A\n"); ////////////////
+		sb.append("D=A\n"); 
 		sb.append(PUSH_D);
 		
 		sb.append("@LCL\n");
