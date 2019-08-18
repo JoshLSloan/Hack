@@ -18,8 +18,7 @@ public class VMTranslator {
 
 		String[] file = args[0].split("\\.");
 		List<File> myFiles = new ArrayList<>();
-		
-		String fileName = null;
+
 		BufferedWriter w = null;
 		
 		if (file.length == 1) {
@@ -56,14 +55,12 @@ public class VMTranslator {
 		}
 		
 		for (int i = 0; i < myFiles.size(); i++) {
-			Parser parse = new Parser(myFiles.get(i).getPath() /*+ ".vm"*/); // Need .vm here?
+			Parser parse = new Parser(myFiles.get(i).getPath()); 
 			
 			code.setFileName(myFiles.get(i).getName());
 			
-			//String previousFunction = "";// Probably don't need this
 			String currentFunction = "";  
 			int functionCallCounter = 0;
-			int globalCallCounter = 0;
 			
 			while (parse.hasMoreCommands()) {
 				w.write("// " + parse.getCurrentCommand() + "\n");
