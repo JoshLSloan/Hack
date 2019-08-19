@@ -26,7 +26,7 @@ public class JackTokenizer {
 	
 	private HashSet<String> keywords;
 	
-	private int currentToken;
+	private int currentToken = 0;
 
 	public JackTokenizer (String fileName) {
 		
@@ -124,53 +124,6 @@ public class JackTokenizer {
 			
 		}
 		
-		/*
-		BufferedWriter w = null;
-		try {
-			w = new BufferedWriter(new FileWriter(new File("test.xml")));
-			w.write("<tokens>\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		for (int i = 0; i < tokens.size(); i ++) {
-			Token t = tokens.get(i);
-			//System.out.println(t.getType() + ": " + t.getToken());
-			try {
-				if (t.getType() == KEYWORD) {
-					w.write("<keyword> " + t.getToken() + " </keyword>\n");
-				} else if (t.getType() == SYMBOL) {
-					w.write("<symbol> ");
-					String tok = t.getToken();
-					if (tok.equals("<")) {
-						w.write("&lt;");
-					} else if (tok.equals(">")) {
-						w.write("&gt;");
-					} else if (tok.equals("\"")) {
-						w.write("&quot;");
-					} else if (tok.equals("&")) {
-						w.write("&amp;");
-					} else {
-						w.write(tok + " </symbol>\n");
-					}
-				} else if (t.getType() == IDENTIFIER) {
-					w.write("<identifier> " + t.getToken() + " </identifier>\n");
-				} else if (t.getType() == INT_CONST) {
-					w.write("<integerConstant> " + t.getToken() + " </integerConstant>\n");
-				} else {
-					w.write("<stringConstant> " + t.getToken() + " </stringConstant>\n");
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		try {
-			w.write("</tokens>");
-			w.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
 	}
 	
 	private StringBuilder handleKeywordIdentifier (StringBuilder sb) {
@@ -258,10 +211,71 @@ public class JackTokenizer {
 		return sb;  // Never found the end of the block comment
 	}
 	
-	public boolean advance () {
-		return false;
+	public boolean hasNextToken () {
+		return currentToken < tokens.size();
+	}
+	
+	public void advance () {
+		currentToken++;
 		
 	}
 
+	public int tokenType () {
+		return tokens.get(currentToken).getType();
+	}
+	
+	public String tokenValue () {
+		return tokens.get(currentToken).getToken();
+	}
+	
+	private void testXML () {
+		
+		BufferedWriter w = null;
+		try {
+			w = new BufferedWriter(new FileWriter(new File("test.xml")));
+			w.write("<tokens>\n");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		for (int i = 0; i < tokens.size(); i ++) {
+			Token t = tokens.get(i);
+			//System.out.println(t.getType() + ": " + t.getToken());
+			try {
+				if (t.getType() == KEYWORD) {
+					w.write("<keyword> " + t.getToken() + " </keyword>\n");
+				} else if (t.getType() == SYMBOL) {
+					w.write("<symbol> ");
+					String tok = t.getToken();
+					if (tok.equals("<")) {
+						w.write("&lt;");
+					} else if (tok.equals(">")) {
+						w.write("&gt;");
+					} else if (tok.equals("\"")) {
+						w.write("&quot;");
+					} else if (tok.equals("&")) {
+						w.write("&amp;");
+					} else {
+						w.write(tok + " </symbol>\n");
+					}
+				} else if (t.getType() == IDENTIFIER) {
+					w.write("<identifier> " + t.getToken() + " </identifier>\n");
+				} else if (t.getType() == INT_CONST) {
+					w.write("<integerConstant> " + t.getToken() + " </integerConstant>\n");
+				} else {
+					w.write("<stringConstant> " + t.getToken() + " </stringConstant>\n");
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		try {
+			w.write("</tokens>");
+			w.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
 	
 }

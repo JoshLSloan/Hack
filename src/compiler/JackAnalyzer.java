@@ -31,14 +31,15 @@ public class JackAnalyzer {
 			myFiles.add(new File(args[0]));
 		}
 		
-		CompilationEngine engine = new CompilationEngine();
 		
 		for (int i = 0; i < myFiles.size(); i++) {
 			JackTokenizer token = new JackTokenizer(myFiles.get(i).getPath());
-			
-			int length = myFiles.get(i).getName().length();
-			String name = myFiles.get(i).getName();
+					
+			int length = myFiles.get(i).getPath().length();
+			String name = myFiles.get(i).getPath();
 			name = name.substring(0, length - 5) + ".xml";
+			
+			CompilationEngine engine = new CompilationEngine(name, token);
 			
 			
 		}
