@@ -1,10 +1,7 @@
 package compiler;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -191,7 +188,6 @@ public class JackTokenizer {
 			return sb; // The block comment ends on the same line it began
 		}
 		
-		
 		while (scan.hasNextLine()) {
 			String s = scan.nextLine().trim();
 			sb = new StringBuilder(s);
@@ -217,7 +213,6 @@ public class JackTokenizer {
 	
 	public void advance () {
 		currentToken++;
-		
 	}
 
 	public int tokenType () {
@@ -227,55 +222,4 @@ public class JackTokenizer {
 	public String tokenValue () {
 		return tokens.get(currentToken).getToken();
 	}
-	
-	private void testXML () {
-		
-		BufferedWriter w = null;
-		try {
-			w = new BufferedWriter(new FileWriter(new File("test.xml")));
-			w.write("<tokens>\n");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		for (int i = 0; i < tokens.size(); i ++) {
-			Token t = tokens.get(i);
-			//System.out.println(t.getType() + ": " + t.getToken());
-			try {
-				if (t.getType() == KEYWORD) {
-					w.write("<keyword> " + t.getToken() + " </keyword>\n");
-				} else if (t.getType() == SYMBOL) {
-					w.write("<symbol> ");
-					String tok = t.getToken();
-					if (tok.equals("<")) {
-						w.write("&lt;");
-					} else if (tok.equals(">")) {
-						w.write("&gt;");
-					} else if (tok.equals("\"")) {
-						w.write("&quot;");
-					} else if (tok.equals("&")) {
-						w.write("&amp;");
-					} else {
-						w.write(tok + " </symbol>\n");
-					}
-				} else if (t.getType() == IDENTIFIER) {
-					w.write("<identifier> " + t.getToken() + " </identifier>\n");
-				} else if (t.getType() == INT_CONST) {
-					w.write("<integerConstant> " + t.getToken() + " </integerConstant>\n");
-				} else {
-					w.write("<stringConstant> " + t.getToken() + " </stringConstant>\n");
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		try {
-			w.write("</tokens>");
-			w.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-	}
-	
 }

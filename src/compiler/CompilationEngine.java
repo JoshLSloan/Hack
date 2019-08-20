@@ -81,6 +81,7 @@ public class CompilationEngine {
 	
 		w.write("<classVarDec>\n");
 
+/****************** CLASS LEVEL SYMBOL TABLE DATA BEGIN ************************/
 		writeKeyword(t.tokenValue()); // static or field
 		if (!more()) {return;}
 		
@@ -104,7 +105,7 @@ public class CompilationEngine {
 			writeIdentifier(t.tokenValue()); // varName
 			if (!more()) {return;}
 		}
-		
+/****************** CLASS LEVEL SYMBOL TABLE DATA END **************************/
 		writeSymbol(t.tokenValue()); // ;
 		if (!more()) {return;}
 		
@@ -115,6 +116,8 @@ public class CompilationEngine {
 	
 	private void compileSubroutine () throws IOException {
 		w.write("<subroutineDec>\n");
+		
+/******************* SUBROUTINE SYMBOL TABLE BEGIN ****************************/
 		
 		writeKeyword(t.tokenValue()); // function constructor or method
 		if (!more()) {return;}
@@ -133,6 +136,7 @@ public class CompilationEngine {
 		writeSymbol(t.tokenValue()); // (
 		if (!more()) {return;}
 		
+		// SYMBOL TABLE ARGS
 		compileParameterList();
 		
 		writeSymbol(t.tokenValue()); // )
@@ -143,10 +147,12 @@ public class CompilationEngine {
 		writeSymbol(t.tokenValue()); // {
 		if (!more()) {return;}
 		
-		// Does the subroutine start with any var decs
+		// SYMBOL TABLE VARS
 		while (t.tokenValue().equals("var")) {
 			compileVarDec();
 		}
+	
+/******************* SUBROUTINE SYMBOL TABLE END ****************************/
 		
 		compileStatements();
 		
@@ -339,7 +345,6 @@ public class CompilationEngine {
 		w.write("</doStatement>\n");
 		return;
 	}
-	
 	
 	private void compileReturn() throws IOException {
 		w.write("<returnStatement>\n");
