@@ -33,13 +33,17 @@ public class JackAnalyzer {
 		
 		
 		for (int i = 0; i < myFiles.size(); i++) {
-			JackTokenizer token = new JackTokenizer(myFiles.get(i).getPath());
+			String name = myFiles.get(i).getPath();
+			JackTokenizer token = new JackTokenizer(name);
 					
 			int length = myFiles.get(i).getPath().length();
-			String name = myFiles.get(i).getPath();
-			name = name.substring(0, length - 5) + ".xml";
+			name = name.substring(0, length - 5) + ".vm";
 			
-			CompilationEngine engine = new CompilationEngine(name, token);
+			VMWriter writer = new VMWriter(name);
+			
+			name = myFiles.get(i).getName();
+			
+			CompilationEngine engine = new CompilationEngine(name.substring(0, name.length() - 3), token, writer);
 			
 			
 		}

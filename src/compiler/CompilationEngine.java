@@ -1,32 +1,26 @@
 package compiler;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 public class CompilationEngine {
 	
 	private JackTokenizer t;
-	private BufferedWriter w;
+	private BufferedWriter w = null;
+	
+	private VMWriter writer;
+	private SymbolTable table;
+	private String className;
 	
 	private static final String op = "+-*/&|<>=";
 	
-	public CompilationEngine (String pFileName, JackTokenizer tokens) {
+	public CompilationEngine (String pClassName, JackTokenizer tokens, VMWriter pWriter) {
+		this.className = pClassName;
 		this.t = tokens;
-		try  {
-			w = new BufferedWriter(new FileWriter(new File(pFileName)));
-			this.compileClass();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				w.flush();
-				w.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
+		this.writer = pWriter;
+		this.table = new SymbolTable();
+		
+		this.compileClass();
 	}
 	
 	private boolean more() {
