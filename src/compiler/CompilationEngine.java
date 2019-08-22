@@ -1,71 +1,56 @@
 package compiler;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 public class CompilationEngine {
 	
-	private JackTokenizer t;
-	private BufferedWriter w;
+	private JackTokenizer tokenizer;
+	private BufferedWriter w = null;
+	
+	private VMWriter writer;
+	private SymbolTable table;
+	private String className;
 	
 	private static final String op = "+-*/&|<>=";
 	
-	public CompilationEngine (String pFileName, JackTokenizer tokens) {
-		this.t = tokens;
-		try  {
-			w = new BufferedWriter(new FileWriter(new File(pFileName)));
-			this.compileClass();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				w.flush();
-				w.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private boolean more() {
-		if (t.hasNextToken()) {
-			t.advance();
-			return true;
-		}
+	public CompilationEngine (String pClassName, JackTokenizer tokens, VMWriter pWriter) {
+		this.className = pClassName;
+		this.tokenizer = tokens;
+		this.writer = pWriter;
+		this.table = new SymbolTable();
 		
-		return false;
+		this.compileClass();
 	}
 	
 	private void compileClass () {
 		try {
 			w.write("<class>\n");
 			
-			writeKeyword(t.tokenValue()); // class
-			if (!more()) {return;}
+			writeKeyword(tokenizer.tokenValue()); // class
+			tokenizer.advance();
 			
-			writeIdentifier(t.tokenValue()); // className
-			if (!more()) {return;}
+			writeIdentifier(tokenizer.tokenValue()); // className
+			tokenizer.advance();
 			
-			writeSymbol(t.tokenValue()); // {
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // {
+			tokenizer.advance();
 			
 			// ClassVarDec
-			while (t.tokenValue().equals("static") || t.tokenValue().equals("field")) {
+			while (tokenizer.tokenValue().equals("static") || tokenizer.tokenValue().equals("field")) {
 				compileClassVarDec();
 			}
 			
 			
 			// subroutineDec
-			while (t.tokenValue().equals("constructor") || t.tokenValue().equals("function") ||
-					t.tokenValue().equals("method")) {
+			while (tokenizer.tokenValue().equals("constructor") || tokenizer.tokenValue().equals("function") ||
+					tokenizer.tokenValue().equals("method")) {
 				
 				compileSubroutine();
 			}
 			
-			writeSymbol(t.tokenValue()); // {
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // {
+			tokenizer.advance();
 			
 			w.write("</class>\n");
 			
@@ -81,32 +66,32 @@ public class CompilationEngine {
 	
 		w.write("<classVarDec>\n");
 
-		writeKeyword(t.tokenValue()); // static or field
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // static or field
+		tokenizer.advance();
 		
-		if (t.tokenType() == JackTokenizer.IDENTIFIER) {
-			writeIdentifier(t.tokenValue()); // className
-			if (!more()) {return;}
+		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
+			writeIdentifier(tokenizer.tokenValue()); // className
+			tokenizer.advance();
 		}
 		
-		if (t.tokenType() == JackTokenizer.KEYWORD) {
-			writeKeyword(t.tokenValue()); // int char or boolean
-			if (!more()) {return;}
+		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
+			writeKeyword(tokenizer.tokenValue()); // int char or boolean
+			tokenizer.advance();
 		}
 		
-		writeIdentifier(t.tokenValue()); // varName
-		if (!more()) {return;}
+		writeIdentifier(tokenizer.tokenValue()); // varName
+		tokenizer.advance();
 		
-		while (t.tokenValue().contentEquals(",")) {
-			writeSymbol(t.tokenValue()); // ,
-			if (!more()) {return;}
+		while (tokenizer.tokenValue().contentEquals(",")) {
+			writeSymbol(tokenizer.tokenValue()); // ,
+			tokenizer.advance();
 			
-			writeIdentifier(t.tokenValue()); // varName
-			if (!more()) {return;}
+			writeIdentifier(tokenizer.tokenValue()); // varName
+			tokenizer.advance();
 		}
 		
-		writeSymbol(t.tokenValue()); // ;
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // ;
+		tokenizer.advance();
 		
 		w.write("</classVarDec>\n");
 		
@@ -116,42 +101,42 @@ public class CompilationEngine {
 	private void compileSubroutine () throws IOException {
 		w.write("<subroutineDec>\n");
 		
-		writeKeyword(t.tokenValue()); // function constructor or method
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // function constructor or method
+		tokenizer.advance();
 		
-		if (t.tokenType() == JackTokenizer.IDENTIFIER) {
-			writeIdentifier(t.tokenValue()); // type
-			if (!more()) {return;}
+		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
+			writeIdentifier(tokenizer.tokenValue()); // type
+			tokenizer.advance();
 		} else {
-			writeKeyword(t.tokenValue()); // void
-			if (!more()) {return;}
+			writeKeyword(tokenizer.tokenValue()); // void
+			tokenizer.advance();
 		}
 		
-		writeIdentifier(t.tokenValue()); // subroutineName
-		if (!more()) {return;}
+		writeIdentifier(tokenizer.tokenValue()); // subroutineName
+		tokenizer.advance();
 		
-		writeSymbol(t.tokenValue()); // (
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // (
+		tokenizer.advance();
 		
 		compileParameterList();
 		
-		writeSymbol(t.tokenValue()); // )
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // )
+		tokenizer.advance();
 
 		w.write("<subroutineBody>\n");
 		
-		writeSymbol(t.tokenValue()); // {
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // {
+		tokenizer.advance();
 		
 		// Does the subroutine start with any var decs
-		while (t.tokenValue().equals("var")) {
+		while (tokenizer.tokenValue().equals("var")) {
 			compileVarDec();
 		}
 		
 		compileStatements();
 		
-		writeSymbol(t.tokenValue()); // }
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // }
+		tokenizer.advance();
 		
 		w.write("</subroutineBody>\n");
 		w.write("</subroutineDec>\n");
@@ -163,39 +148,39 @@ public class CompilationEngine {
 		w.write("<parameterList>\n");
 				
 		// No parameters
-		if (t.tokenValue().equals(")")) {
+		if (tokenizer.tokenValue().equals(")")) {
 			w.write("</parameterList>\n");
 			return;
 		}
 		
-		if (t.tokenType() == JackTokenizer.IDENTIFIER) {
-			writeIdentifier(t.tokenValue()); // className
-			if (!more()) {return;}
+		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
+			writeIdentifier(tokenizer.tokenValue()); // className
+			tokenizer.advance();
 		}
 		
-		if (t.tokenType() == JackTokenizer.KEYWORD) {
-			writeKeyword(t.tokenValue()); // int char or boolean
-			if (!more()) {return;}
+		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
+			writeKeyword(tokenizer.tokenValue()); // int char or boolean
+			tokenizer.advance();
 		}
 		
-		writeIdentifier(t.tokenValue()); // varName
-		if (!more()) {return;}
+		writeIdentifier(tokenizer.tokenValue()); // varName
+		tokenizer.advance();
 				
 		// Repeats until we don't have any more parameters
-		while (t.tokenValue().equals(",")) {
-			writeSymbol(t.tokenValue()); // ,
-			if (!more()) {return;}
+		while (tokenizer.tokenValue().equals(",")) {
+			writeSymbol(tokenizer.tokenValue()); // ,
+			tokenizer.advance();
 			
-			if (t.tokenType() == JackTokenizer.IDENTIFIER) {
-				writeIdentifier(t.tokenValue()); // className
-				if (!more()) {return;}
+			if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
+				writeIdentifier(tokenizer.tokenValue()); // className
+				tokenizer.advance();
 			} else {
-				writeKeyword(t.tokenValue()); // int char or boolean
-				if (!more()) {return;}
+				writeKeyword(tokenizer.tokenValue()); // int char or boolean
+				tokenizer.advance();
 			}
 			
-			writeIdentifier(t.tokenValue()); // varName
-			if (!more()) {return;}
+			writeIdentifier(tokenizer.tokenValue()); // varName
+			tokenizer.advance();
 		}
 		
 		w.write("</parameterList>\n");
@@ -205,32 +190,32 @@ public class CompilationEngine {
 	private void compileVarDec () throws IOException {
 		w.write("<varDec>\n");
 
-		writeKeyword(t.tokenValue()); // var
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // var
+		tokenizer.advance();
 		
-		if (t.tokenType() == JackTokenizer.IDENTIFIER) {
-			writeIdentifier(t.tokenValue()); // className
-			if (!more()) {return;}
+		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
+			writeIdentifier(tokenizer.tokenValue()); // className
+			tokenizer.advance();
 		}
 		
-		if (t.tokenType() == JackTokenizer.KEYWORD) {
-			writeKeyword(t.tokenValue()); // int char or boolean
-			if (!more()) {return;}
+		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
+			writeKeyword(tokenizer.tokenValue()); // int char or boolean
+			tokenizer.advance();
 		}
 		
-		writeIdentifier(t.tokenValue()); // varName
-		if (!more()) {return;}
+		writeIdentifier(tokenizer.tokenValue()); // varName
+		tokenizer.advance();
 		
-		while (t.tokenValue().equals(",")) {
-			writeSymbol(t.tokenValue()); // ,
-			if (!more()) {return;}
+		while (tokenizer.tokenValue().equals(",")) {
+			writeSymbol(tokenizer.tokenValue()); // ,
+			tokenizer.advance();
 			
-			writeIdentifier(t.tokenValue()); // varName
-			if (!more()) {return;}
+			writeIdentifier(tokenizer.tokenValue()); // varName
+			tokenizer.advance();
 		}
 		
-		writeSymbol(t.tokenValue()); // ;
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // ;
+		tokenizer.advance();
 		
 		w.write("</varDec>\n");
 		return;
@@ -241,17 +226,17 @@ public class CompilationEngine {
 		
 		w.write("<statements>\n");
 		
-		while (t.tokenType() == JackTokenizer.KEYWORD) {
+		while (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
 			
-			if (t.tokenValue().equals("let")) {
+			if (tokenizer.tokenValue().equals("let")) {
 				compileLet();
-			} else if (t.tokenValue().equals("do")) {
+			} else if (tokenizer.tokenValue().equals("do")) {
 				compileDo();
-			} else if (t.tokenValue().equals("return")) {
+			} else if (tokenizer.tokenValue().equals("return")) {
 				compileReturn();
-			} else if (t.tokenValue().equals("if")) {
+			} else if (tokenizer.tokenValue().equals("if")) {
 				compileIf();
-			} else if (t.tokenValue().equals("while")) {
+			} else if (tokenizer.tokenValue().equals("while")) {
 				compileWhile();
 			}
 		}
@@ -264,31 +249,31 @@ public class CompilationEngine {
 		
 		w.write("<letStatement>\n");
 		
-		writeKeyword(t.tokenValue()); // let
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // let
+		tokenizer.advance();
 		
-		writeIdentifier(t.tokenValue()); // varName
-		if (!more()) {return;}
+		writeIdentifier(tokenizer.tokenValue()); // varName
+		tokenizer.advance();
 		
 		// Is this an array value or not
-		if (t.tokenValue().equals("[")) {
+		if (tokenizer.tokenValue().equals("[")) {
 			// Array value
-			writeSymbol(t.tokenValue()); // [
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // [
+			tokenizer.advance();
 			
 			compileExpression();
 			
-			writeSymbol(t.tokenValue()); // ]
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // ]
+			tokenizer.advance();
 		}
 		
-		writeSymbol(t.tokenValue()); // =
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // =
+		tokenizer.advance();
 		
 		compileExpression();
 		
-		writeSymbol(t.tokenValue()); // ;
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // ;
+		tokenizer.advance();
 		
 		w.write("</letStatement>\n");
 		
@@ -298,42 +283,42 @@ public class CompilationEngine {
 	private void compileDo () throws IOException {
 		w.write("<doStatement>\n");
 		
-		writeKeyword(t.tokenValue()); // do
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // do
+		tokenizer.advance();
 		
-		writeIdentifier(t.tokenValue()); // subroutineName / className / varName
-		if (!more()) {return;}
+		writeIdentifier(tokenizer.tokenValue()); // subroutineName / className / varName
+		tokenizer.advance();
 		
-		if (t.tokenValue().equals("(")) {
-			writeSymbol(t.tokenValue()); // (
-			if (!more()) {return;}
+		if (tokenizer.tokenValue().equals("(")) {
+			writeSymbol(tokenizer.tokenValue()); // (
+			tokenizer.advance();
 			
 			compileExpressionList();
 			
-			writeSymbol(t.tokenValue()); // )
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // )
+			tokenizer.advance();
 			
-			writeSymbol(t.tokenValue()); // ;
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // ;
+			tokenizer.advance();
 			
 		} else {
 			
-			writeSymbol(t.tokenValue()); // .
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // .
+			tokenizer.advance();
 			
-			writeIdentifier(t.tokenValue()); // subroutineName
-			if (!more()) {return;}
+			writeIdentifier(tokenizer.tokenValue()); // subroutineName
+			tokenizer.advance();
 			
-			writeSymbol(t.tokenValue()); // (
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // (
+			tokenizer.advance();
 			
 			compileExpressionList();
 			
-			writeSymbol(t.tokenValue()); // )
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // )
+			tokenizer.advance();
 			
-			writeSymbol(t.tokenValue()); // ;
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // ;
+			tokenizer.advance();
 		}
 		
 		w.write("</doStatement>\n");
@@ -344,16 +329,16 @@ public class CompilationEngine {
 	private void compileReturn() throws IOException {
 		w.write("<returnStatement>\n");
 		
-		writeKeyword(t.tokenValue()); // return
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // return
+		tokenizer.advance();
 		
-		if (!(t.tokenValue().equals(";"))) {
+		if (!(tokenizer.tokenValue().equals(";"))) {
 			// expressions
 			compileExpression();
 		} 
 		
-		writeSymbol(t.tokenValue()); // ;
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // ;
+		tokenizer.advance();
 		
 		w.write("</returnStatement>\n");
 	}
@@ -361,38 +346,38 @@ public class CompilationEngine {
 	private void compileIf () throws IOException {
 		w.write("<ifStatement>\n");
 		
-		writeKeyword(t.tokenValue()); // if
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // if
+		tokenizer.advance();
 		
-		writeSymbol(t.tokenValue()); // (
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // (
+		tokenizer.advance();
 		
 		compileExpression();
 		
-		writeSymbol(t.tokenValue()); // )
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // )
+		tokenizer.advance();
 		
-		writeSymbol(t.tokenValue()); // {
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // {
+		tokenizer.advance();
 		
 		compileStatements();
 		
-		writeSymbol(t.tokenValue()); // }
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // }
+		tokenizer.advance();
 		
-		if (t.tokenValue().equals("else")) {
+		if (tokenizer.tokenValue().equals("else")) {
 			// else statement
 			
-			writeKeyword(t.tokenValue()); // else
-			if (!more()) {return;}
+			writeKeyword(tokenizer.tokenValue()); // else
+			tokenizer.advance();
 			
-			writeSymbol(t.tokenValue()); // {
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // {
+			tokenizer.advance();
 			
 			compileStatements();
 			
-			writeSymbol(t.tokenValue()); // }
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // }
+			tokenizer.advance();
 		}
 		
 		w.write("</ifStatement>\n");
@@ -402,24 +387,24 @@ public class CompilationEngine {
 	private void compileWhile () throws IOException {
 		w.write("<whileStatement>\n");
 		
-		writeKeyword(t.tokenValue()); // while
-		if (!more()) {return;}
+		writeKeyword(tokenizer.tokenValue()); // while
+		tokenizer.advance();
 		
-		writeSymbol(t.tokenValue()); // (
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // (
+		tokenizer.advance();
 		
 		compileExpression();
 		
-		writeSymbol(t.tokenValue()); // )
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // )
+		tokenizer.advance();
 		
-		writeSymbol(t.tokenValue()); // {
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // {
+		tokenizer.advance();
 		
 		compileStatements();
 		
-		writeSymbol(t.tokenValue()); // }
-		if (!more()) {return;}
+		writeSymbol(tokenizer.tokenValue()); // }
+		tokenizer.advance();
 		
 		w.write("</whileStatement>\n");
 	}
@@ -432,10 +417,10 @@ public class CompilationEngine {
 		compileTerm();
 		
 		// Do we have another (op term)* or are we done with the expression
-		while (op.indexOf(t.tokenValue()) > -1) {
+		while (op.indexOf(tokenizer.tokenValue()) > -1) {
 			// t.tokenValue is in the string of operators op
-			writeSymbol(t.tokenValue()); // op
-			if (!more()) {return;}
+			writeSymbol(tokenizer.tokenValue()); // op
+			tokenizer.advance();
 			
 			compileTerm();
 		}
@@ -450,80 +435,80 @@ public class CompilationEngine {
 		
 		w.write("<term>\n");
 		
-		if (t.tokenType() == JackTokenizer.INT_CONST) {
+		if (tokenizer.tokenType() == JackTokenizer.INT_CONST) {
 			// integerConstant
-			writeIntegerConstant(t.tokenValue());
-			if (!more()) {return;}
+			writeIntegerConstant(tokenizer.tokenValue());
+			tokenizer.advance();
 			w.write("</term>\n");
 			return;
 		}
 		
-		if (t.tokenType() == JackTokenizer.STRING_CONST) {
+		if (tokenizer.tokenType() == JackTokenizer.STRING_CONST) {
 			// stringConstant
-			writeStringConstant(t.tokenValue());
-			if (!more()) {return;}
+			writeStringConstant(tokenizer.tokenValue());
+			tokenizer.advance();
 			w.write("</term>\n");
 			return;
 		}
 		
-		if (t.tokenType() == JackTokenizer.KEYWORD) {
+		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
 			// keywordConstant
-			writeKeyword(t.tokenValue());
-			if (!more()) {return;}
+			writeKeyword(tokenizer.tokenValue());
+			tokenizer.advance();
 			w.write("</term>\n");
 			return;
 		}
 		
-		if (t.tokenType() == JackTokenizer.IDENTIFIER) {
+		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
 			// varName or varName[expression] or subroutineCall
-			writeIdentifier(t.tokenValue()); // varName, varName[], subroutineName / className / varName
-			if (!more()) {return;}
+			writeIdentifier(tokenizer.tokenValue()); // varName, varName[], subroutineName / className / varName
+			tokenizer.advance();
 			
-			if (t.tokenValue().equals("(") || t.tokenValue().equals(".")) {
+			if (tokenizer.tokenValue().equals("(") || tokenizer.tokenValue().equals(".")) {
 				// subroutineCall
 				
-				if (t.tokenValue().equals("(")) {
+				if (tokenizer.tokenValue().equals("(")) {
 					// subroutineName ( expressionList )
-					writeSymbol(t.tokenValue()); // (
-					if (!more()) {return;}
+					writeSymbol(tokenizer.tokenValue()); // (
+					tokenizer.advance();
 					
 					compileExpressionList();
 					
-					writeSymbol(t.tokenValue()); // )
-					if (!more()) {return;}
+					writeSymbol(tokenizer.tokenValue()); // )
+					tokenizer.advance();
 					
 					w.write("</term>\n");
 					return;
 				} else {
 					// (className | varName) . subRoutineName ( expressionList )
-					writeSymbol(t.tokenValue()); // .
-					if (!more()) {return;}
+					writeSymbol(tokenizer.tokenValue()); // .
+					tokenizer.advance();
 					
-					writeIdentifier(t.tokenValue()); // subroutineName
-					if (!more()) {return;}
+					writeIdentifier(tokenizer.tokenValue()); // subroutineName
+					tokenizer.advance();
 					
-					writeSymbol(t.tokenValue()); // (
-					if (!more()) {return;}
+					writeSymbol(tokenizer.tokenValue()); // (
+					tokenizer.advance();
 					
 					compileExpressionList();
 					
-					writeSymbol(t.tokenValue()); // )
-					if (!more()) {return;}
+					writeSymbol(tokenizer.tokenValue()); // )
+					tokenizer.advance();
 					
 					w.write("</term>\n");
 					return;
 				}
 				
-			} else if (t.tokenValue().equals("[")) {
+			} else if (tokenizer.tokenValue().equals("[")) {
 				// varName[expression]
 				
-				writeSymbol(t.tokenValue()); // [
-				if (!more()) {return;}
+				writeSymbol(tokenizer.tokenValue()); // [
+				tokenizer.advance();
 				
 				compileExpression();
 				
-				writeSymbol(t.tokenValue()); // ]
-				if (!more()) {return;}
+				writeSymbol(tokenizer.tokenValue()); // ]
+				tokenizer.advance();
 				
 				w.write("</term>\n");
 				return;
@@ -535,26 +520,26 @@ public class CompilationEngine {
 			}
 		}
 		
-		if (t.tokenType() == JackTokenizer.SYMBOL) {
+		if (tokenizer.tokenType() == JackTokenizer.SYMBOL) {
 			// (expression) or unaryOp + Term
-			if (t.tokenValue().equals("(")) {
+			if (tokenizer.tokenValue().equals("(")) {
 				// (expression)
 				
-				writeSymbol(t.tokenValue()); // (
-				if (!more()) {return;}
+				writeSymbol(tokenizer.tokenValue()); // (
+				tokenizer.advance();
 				
 				compileExpression();
 				
-				writeSymbol(t.tokenValue()); // )
-				if (!more()) {return;}
+				writeSymbol(tokenizer.tokenValue()); // )
+				tokenizer.advance();
 				
 				w.write("</term>\n");
 				return;
 			} else {
 				// unaryOp Term
 				
-				writeSymbol(t.tokenValue()); // unaryOp
-				if (!more()) {return;}
+				writeSymbol(tokenizer.tokenValue()); // unaryOp
+				tokenizer.advance();
 				
 				compileTerm();
 				
@@ -569,7 +554,7 @@ public class CompilationEngine {
 	private void compileExpressionList() throws IOException {
 		w.write("<expressionList>\n");
 		
-		if (t.tokenValue().equals(")")) {
+		if (tokenizer.tokenValue().equals(")")) {
 			// We have nothing in this expressionList
 			w.write("</expressionList>\n");
 			return;
@@ -580,9 +565,9 @@ public class CompilationEngine {
 		// If the next token is a , then we have another (, expression)
 		// Otherwise we are done with this expressionList
 		
-		while (t.tokenValue().equals(",")) {
-			writeSymbol(t.tokenValue()); // ,
-			if (!more()) {return;}
+		while (tokenizer.tokenValue().equals(",")) {
+			writeSymbol(tokenizer.tokenValue()); // ,
+			tokenizer.advance();
 			
 			compileExpression();
 		}
