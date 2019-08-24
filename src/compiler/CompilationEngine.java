@@ -367,14 +367,12 @@ public class CompilationEngine {
 	}
 	
 	private void compileDo () throws IOException {
-		//w.write("<doStatement>\n");
 		
 		String subClassName, subName, type = null; 
 		boolean thisCall = false; // Will become true if this is a call to subroutine in this class
 		args = 0;
-		
-		 // do
-		tokenizer.advance();
+				 
+		/* do */tokenizer.advance();
 		
 		 // subroutineName / className / varName
 		subClassName = tokenizer.tokenValue(); // 
@@ -386,21 +384,14 @@ public class CompilationEngine {
 			writer.writePush(SegType.POINTER, 0); // Pushes implicit this onto the stack
 			args++;
 			subName = subClassName; // subClassName was actually subName for thisCall
-			
-			 // (
-			tokenizer.advance();
+			/* ( */tokenizer.advance();
 			
 		} else {
-			
-			 // .
+			/* . */tokenizer.advance();
+			subName = tokenizer.tokenValue();// subroutineName
 			tokenizer.advance();
 			
-			 // subroutineName
-			subName = tokenizer.tokenValue();
-			tokenizer.advance();
-			
-			 // (
-			tokenizer.advance();
+			/* ( */tokenizer.advance();
 			
 			if (table.kindOf(subClassName) != Kind.NONE) {
 				// Its a varName and so is a method call
@@ -410,14 +401,8 @@ public class CompilationEngine {
 				args++;
 			}
 		}
-		
 		compileExpressionList();
-		
-		// )
-		tokenizer.advance();
-		
-		 // ;
-		tokenizer.advance();
+		advanceTokens(2); // /*  ;
 		
 		if (thisCall) {
 			// We are calling a subroutine in this class
@@ -429,13 +414,8 @@ public class CompilationEngine {
 				writer.writeCall(subClassName + "." + subName, args);
 			}
 		}
-		
 		args = 0;
-
 		writer.writePop(SegType.TEMP, 0); // This is a do statement so throw out dummy return value
-		
-		//w.write("</doStatement>\n");
-		return;
 	}
 	
 	
@@ -580,6 +560,18 @@ public class CompilationEngine {
 			
 ///////////////////////////////////////// KEYWORD CONSTANT /////////////////////////////////////////////		
 		} else if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
+			
+			String kw = tokenizer.tokenValue();
+			
+			if (kw.equals("true")) {
+				writer.writePush(SegType.CONST, 0);
+				writer.writeArithmetic(Arithmetic.NOT);
+			} else if (kw.equals("false") || kw.equals("null")) {
+				writer.writePush(SegType.CONST, 0);
+			} else {
+				writer.writePush(SegType.POINTER, 0);
+			}
+			
 			// keywordConstant
 			tokenizer.advance();
 			//w.write("</term>\n");
@@ -588,43 +580,85 @@ public class CompilationEngine {
 ////////////////////////////////////////// SUB ROUT ///////////////////////////////////////////////////		
 		} else if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
 			// varName or varName[expression] or subroutineCall
-			 // varName, varName[], subroutineName / className / varName
+
+			String subClassName, subName, type = null;
+			boolean thisCall = false;
+			boolean subCall = false;
+			
+  		    // varName, varName[], subroutineName / className / varName
+			subClassName = tokenizer.tokenValue();
 			tokenizer.advance();
 			
 			if (tokenizer.tokenValue().equals("(") || tokenizer.tokenValue().equals(".")) {
 				// subroutineCall
-				
+				subCall = true;
 				if (tokenizer.tokenValue().equals("(")) {
 					// subroutineName ( expressionList )
+					
+					thisCall = true;
+					writer.writePush(SegType.POINTER, 0);
+					args++;
+					subName = subClassName;
+					/*
 					 // (
 					tokenizer.advance();
 					
 					compileExpressionList();
 					
-					 // )
+					// )
 					tokenizer.advance();
-					
-					//w.write("</term>\n");
-					return;
+					 */
 				} else {
 					// (className | varName) . subRoutineName ( expressionList )
 					 // .
 					tokenizer.advance();
 					
 					 // subroutineName
+					subName = tokenizer.tokenValue();
 					tokenizer.advance();
 					
+					if (table.kindOf(subClassName) != Kind.NONE) {
+						type = table.typeOf(subClassName);
+						SegType segment = getSegType(table.kindOf(type));
+						writer.writePush(segment, table.indexOf(subClassName));
+						args++;
+					}
+					/*
 					 // (
 					tokenizer.advance();
 					
+		
 					compileExpressionList();
 					
 					 // )
 					tokenizer.advance();
-					
-					//w.write("</term>\n");
-					return;
+					 */
 				}
+				
+				 // (
+				tokenizer.advance();
+				
+				compileExpressionList();
+				
+				 // )
+				tokenizer.advance();
+				
+				if (thisCall) {
+					writer.writeCall(className + "." + subName, args);
+				} else if (subCall) {
+					if (type != null) {
+						writer.writeCall(type + "." + subName, args);
+					} else {
+						writer.writeCall(subClassName + "." + subName, args);
+					}
+				} else {
+					
+				}
+				
+				args = 0;
+				
+				return;
+				
 //////////////////////////////////// ARRAY ///////////////////////////////////////////////////////////////				
 			} else if (tokenizer.tokenValue().equals("[")) {
 				// varName[expression]
@@ -641,7 +675,7 @@ public class CompilationEngine {
 				return;
 			} else {
 				// varName (current token is a symbol)
-				
+				writer.writePush(getSegType(table.kindOf(subClassName)), table.indexOf(subClassName));
 				//w.write("</term>\n");
 				return;
 			}
@@ -666,7 +700,6 @@ public class CompilationEngine {
 				return;
 			} else {
 				// unaryOp Term
-				System.out.println("T: " + tokenizer.tokenValue());
 				
 				String unaryOperation = tokenizer.tokenValue();
 				 // unaryOp
@@ -760,5 +793,11 @@ public class CompilationEngine {
 			writer.writeArithmetic(Arithmetic.EQ);
 		}
 
+	}
+	
+	private void advanceTokens (int pAdvance) {
+		for (int i = 0; i < pAdvance; i++) {
+			tokenizer.advance();
+		}
 	}
 }
