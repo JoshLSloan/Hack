@@ -320,10 +320,14 @@ public class CompilationEngine {
 		
 		//w.write("<letStatement>\n");
 		
+		String varName;
+		boolean array = false;
+		
 		 // let
 		tokenizer.advance();
 		
 		 // varName
+		varName = tokenizer.tokenValue();
 		tokenizer.advance();
 		
 		// Is this an array value or not
@@ -345,6 +349,17 @@ public class CompilationEngine {
 		
 		 // ;
 		tokenizer.advance();
+		
+		if (array) {
+			// Set that to the array
+			writer.writePush(SegType.TEMP, 0);
+			writer.writePop(SegType.POINTER, 1);
+			writer.writePop(SegType.THAT, 0);
+		} else {
+			// Pop the value into the variable
+			SegType seg = getSegType(table.kindOf(varName));
+			writer.writePop(seg, table.indexOf(varName));
+		}
 		
 		//w.write("</letStatement>\n");
 		
@@ -543,6 +558,7 @@ public class CompilationEngine {
 		
 		//w.write("<term>\n");
 		
+//////////////////////////////// INTEGER CONSTANT //////////////////////////////////////////////////////
 		if (tokenizer.tokenType() == JackTokenizer.INT_CONST) {
 			int constant = Integer.parseInt(tokenizer.tokenValue());
 			
@@ -555,25 +571,22 @@ public class CompilationEngine {
 			}
 			// integerConstant
 			tokenizer.advance();
-
-			return;
-		}
-		
-		if (tokenizer.tokenType() == JackTokenizer.STRING_CONST) {
+			
+////////////////////////////////////////// STRING CONSTANT /////////////////////////////////////////////
+		} else if (tokenizer.tokenType() == JackTokenizer.STRING_CONST) {
 			// stringConstant
 			tokenizer.advance();
 			//w.write("</term>\n");
-			return;
-		}
-		
-		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
+			
+///////////////////////////////////////// KEYWORD CONSTANT /////////////////////////////////////////////		
+		} else if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
 			// keywordConstant
 			tokenizer.advance();
 			//w.write("</term>\n");
 			return;
-		}
-		
-		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
+			
+////////////////////////////////////////// SUB ROUT ///////////////////////////////////////////////////		
+		} else if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
 			// varName or varName[expression] or subroutineCall
 			 // varName, varName[], subroutineName / className / varName
 			tokenizer.advance();
@@ -612,7 +625,7 @@ public class CompilationEngine {
 					//w.write("</term>\n");
 					return;
 				}
-				
+//////////////////////////////////// ARRAY ///////////////////////////////////////////////////////////////				
 			} else if (tokenizer.tokenValue().equals("[")) {
 				// varName[expression]
 				
@@ -632,11 +645,11 @@ public class CompilationEngine {
 				//w.write("</term>\n");
 				return;
 			}
-		}
-		
-		
-		if (tokenizer.tokenValue().equals("(") || tokenizer.tokenValue().equals("~") ||
+			
+		//////////////////////////////////// UNARY OR EXPRESSION //////////////////////////////////
+		} else if (tokenizer.tokenValue().equals("(") || tokenizer.tokenValue().equals("~") ||
 				tokenizer.tokenValue().equals("-")) {  
+			
 			// (expression) or unaryOp + Term
 			if (tokenizer.tokenValue().equals("(")) {
 				// (expression)
@@ -653,11 +666,19 @@ public class CompilationEngine {
 				return;
 			} else {
 				// unaryOp Term
+				System.out.println("T: " + tokenizer.tokenValue());
 				
+				String unaryOperation = tokenizer.tokenValue();
 				 // unaryOp
 				tokenizer.advance();
 				
 				compileTerm();
+				
+				if (unaryOperation.equals("~")) {
+					writer.writeArithmetic(Arithmetic.NOT);
+				} else {
+					writer.writeArithmetic(Arithmetic.NEG);
+				}
 				
 				//w.write("</term>\n");
 				return;
