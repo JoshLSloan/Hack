@@ -1,6 +1,8 @@
 package compiler;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 public class SymbolTable {
 	private HashMap<String, SymbolData> classSymbols;
@@ -28,6 +30,8 @@ public class SymbolTable {
 	}
 	
 	public void define (Kind pKind, String pType, String pName) {
+		
+		//System.out.println("CLASS TABLE: " + pKind);
 		
 		switch (pKind) {
 
@@ -104,5 +108,25 @@ public class SymbolTable {
 		} else {
 			return -1;
 		}
+	}
+	
+	public String toString () {
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("CLASS TABLE\n");
+		sb.append("-------------\n");
+		classSymbols.forEach((k,v) -> {
+		    sb.append(k + " " + v.toString() + "\n");
+		});
+		
+		sb.append("SUBROUTINE TABLE\n");
+		sb.append("-------------------\n");
+		subroutineSymbols.forEach((k,v) -> {
+		    sb.append(k + " " + v.toString() + "\n");
+		});
+		
+		return sb.toString();
+		
 	}
 }

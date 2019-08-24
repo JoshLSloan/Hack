@@ -25,7 +25,10 @@ public class CompilationEngine {
 	
 	private void compileClass () {
 		try {
-			w.write("<class>\n");
+			//w.write("<class>\n");
+			
+			System.out.println("COMPILING CLASS " + className);
+			System.out.println("-----------------------------");
 			
 			writeKeyword(tokenizer.tokenValue()); // class
 			tokenizer.advance();
@@ -41,7 +44,12 @@ public class CompilationEngine {
 				compileClassVarDec();
 			}
 			
+			// ClassVarDec
+			while (tokenizer.tokenValue().equals("static") || tokenizer.tokenValue().equals("field")) {
+				compileClassVarDec();
+			}
 			
+			table.toString();
 			// subroutineDec
 			while (tokenizer.tokenValue().equals("constructor") || tokenizer.tokenValue().equals("function") ||
 					tokenizer.tokenValue().equals("method")) {
@@ -52,7 +60,7 @@ public class CompilationEngine {
 			writeSymbol(tokenizer.tokenValue()); // {
 			tokenizer.advance();
 			
-			w.write("</class>\n");
+			//w.write("</class>\n");
 			
 			return;
 			
@@ -63,43 +71,65 @@ public class CompilationEngine {
 	}
 	
 	private void compileClassVarDec () throws IOException {
-	
-		w.write("<classVarDec>\n");
+		
+		Kind classKind;
+		String type = null, name;
 
-		writeKeyword(tokenizer.tokenValue()); // static or field
+		if (tokenizer.tokenValue().equals("static")) {
+			classKind = Kind.STATIC;
+		} else {
+			classKind = Kind.FIELD;
+		}
+		
+		// static or field
 		tokenizer.advance();
 		
 		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
-			writeIdentifier(tokenizer.tokenValue()); // className
+			type = tokenizer.tokenValue();
+			// className
 			tokenizer.advance();
 		}
 		
 		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
-			writeKeyword(tokenizer.tokenValue()); // int char or boolean
+			type = tokenizer.tokenValue();
+	        // int char or boolean
 			tokenizer.advance();
 		}
 		
-		writeIdentifier(tokenizer.tokenValue()); // varName
+		// varName
+		name = tokenizer.tokenValue();
 		tokenizer.advance();
+		
+		table.define(classKind, type, name);
 		
 		while (tokenizer.tokenValue().contentEquals(",")) {
 			writeSymbol(tokenizer.tokenValue()); // ,
 			tokenizer.advance();
 			
 			writeIdentifier(tokenizer.tokenValue()); // varName
+			table.define(classKind, type, tokenizer.tokenValue());
 			tokenizer.advance();
 		}
 		
 		writeSymbol(tokenizer.tokenValue()); // ;
 		tokenizer.advance();
 		
-		w.write("</classVarDec>\n");
+		//w.write("</classVarDec>\n");
 		
 		return;
 	}
 	
 	private void compileSubroutine () throws IOException {
-		w.write("<subroutineDec>\n");
+		//w.write("<subroutineDec>\n");
+		
+		String subroutineType;
+		
+		table.startSubroutine();
+		
+		subroutineType = tokenizer.tokenValue();
+		if (subroutineType.equals("method")) {
+			table.define(Kind.ARG, this.className, "this");
+		}
 		
 		writeKeyword(tokenizer.tokenValue()); // function constructor or method
 		tokenizer.advance();
@@ -123,7 +153,7 @@ public class CompilationEngine {
 		writeSymbol(tokenizer.tokenValue()); // )
 		tokenizer.advance();
 
-		w.write("<subroutineBody>\n");
+		//w.write("<subroutineBody>\n");
 		
 		writeSymbol(tokenizer.tokenValue()); // {
 		tokenizer.advance();
@@ -138,34 +168,42 @@ public class CompilationEngine {
 		writeSymbol(tokenizer.tokenValue()); // }
 		tokenizer.advance();
 		
-		w.write("</subroutineBody>\n");
-		w.write("</subroutineDec>\n");
+		//w.write("</subroutineBody>\n");
+		//w.write("</subroutineDec>\n");
 		return;
 	}
 	
 	
 	private void compileParameterList () throws IOException {
-		w.write("<parameterList>\n");
-				
+		//w.write("<parameterList>\n");
+		
+		String argType = null;
+		String argName = null;
+		
 		// No parameters
 		if (tokenizer.tokenValue().equals(")")) {
-			w.write("</parameterList>\n");
+			//w.write("</parameterList>\n");
 			return;
 		}
 		
 		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
 			writeIdentifier(tokenizer.tokenValue()); // className
+			argType = tokenizer.tokenValue();
 			tokenizer.advance();
 		}
 		
 		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
 			writeKeyword(tokenizer.tokenValue()); // int char or boolean
+			argType = tokenizer.tokenValue();
 			tokenizer.advance();
 		}
 		
 		writeIdentifier(tokenizer.tokenValue()); // varName
+		argName = tokenizer.tokenValue();
 		tokenizer.advance();
 				
+		table.define(Kind.ARG, argType, argName);
+		
 		// Repeats until we don't have any more parameters
 		while (tokenizer.tokenValue().equals(",")) {
 			writeSymbol(tokenizer.tokenValue()); // ,
@@ -173,58 +211,74 @@ public class CompilationEngine {
 			
 			if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
 				writeIdentifier(tokenizer.tokenValue()); // className
+				argType = tokenizer.tokenValue();
 				tokenizer.advance();
 			} else {
 				writeKeyword(tokenizer.tokenValue()); // int char or boolean
+				argType = tokenizer.tokenValue();
 				tokenizer.advance();
 			}
 			
 			writeIdentifier(tokenizer.tokenValue()); // varName
+			argName = tokenizer.tokenValue();
 			tokenizer.advance();
+			
+			table.define(Kind.ARG, argType, argName);
 		}
 		
-		w.write("</parameterList>\n");
+		//w.write("</parameterList>\n");
 		return;
 	}
 	
 	private void compileVarDec () throws IOException {
-		w.write("<varDec>\n");
+		//w.write("<varDec>\n");
 
+		String varType = null;
+		String varName = null;
+		
 		writeKeyword(tokenizer.tokenValue()); // var
 		tokenizer.advance();
 		
 		if (tokenizer.tokenType() == JackTokenizer.IDENTIFIER) {
 			writeIdentifier(tokenizer.tokenValue()); // className
+			varType = tokenizer.tokenValue();
 			tokenizer.advance();
 		}
 		
 		if (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
 			writeKeyword(tokenizer.tokenValue()); // int char or boolean
+			varType = tokenizer.tokenValue();
 			tokenizer.advance();
 		}
 		
 		writeIdentifier(tokenizer.tokenValue()); // varName
+		varName = tokenizer.tokenValue();
 		tokenizer.advance();
+		
+		table.define(Kind.VAR, varType, varName);
 		
 		while (tokenizer.tokenValue().equals(",")) {
 			writeSymbol(tokenizer.tokenValue()); // ,
 			tokenizer.advance();
 			
 			writeIdentifier(tokenizer.tokenValue()); // varName
+			varType = tokenizer.tokenValue();
+			table.define(Kind.VAR, varType, varName);
+			
 			tokenizer.advance();
 		}
 		
 		writeSymbol(tokenizer.tokenValue()); // ;
 		tokenizer.advance();
 		
-		w.write("</varDec>\n");
+		//w.write("</varDec>\n");
 		return;
 	}
 	
 	
 	private void compileStatements() throws IOException {
 		
-		w.write("<statements>\n");
+		//w.write("<statements>\n");
 		
 		while (tokenizer.tokenType() == JackTokenizer.KEYWORD) {
 			
@@ -241,13 +295,13 @@ public class CompilationEngine {
 			}
 		}
 		
-		w.write("</statements>\n");
+		//w.write("</statements>\n");
 		return;
 	}
 	
 	private void compileLet() throws IOException {
 		
-		w.write("<letStatement>\n");
+		//w.write("<letStatement>\n");
 		
 		writeKeyword(tokenizer.tokenValue()); // let
 		tokenizer.advance();
@@ -275,13 +329,13 @@ public class CompilationEngine {
 		writeSymbol(tokenizer.tokenValue()); // ;
 		tokenizer.advance();
 		
-		w.write("</letStatement>\n");
+		//w.write("</letStatement>\n");
 		
 		return;
 	}
 	
 	private void compileDo () throws IOException {
-		w.write("<doStatement>\n");
+		//w.write("<doStatement>\n");
 		
 		writeKeyword(tokenizer.tokenValue()); // do
 		tokenizer.advance();
@@ -321,13 +375,13 @@ public class CompilationEngine {
 			tokenizer.advance();
 		}
 		
-		w.write("</doStatement>\n");
+		//w.write("</doStatement>\n");
 		return;
 	}
 	
 	
 	private void compileReturn() throws IOException {
-		w.write("<returnStatement>\n");
+		//w.write("<returnStatement>\n");
 		
 		writeKeyword(tokenizer.tokenValue()); // return
 		tokenizer.advance();
@@ -340,11 +394,11 @@ public class CompilationEngine {
 		writeSymbol(tokenizer.tokenValue()); // ;
 		tokenizer.advance();
 		
-		w.write("</returnStatement>\n");
+		//w.write("</returnStatement>\n");
 	}
 	
 	private void compileIf () throws IOException {
-		w.write("<ifStatement>\n");
+		//w.write("<ifStatement>\n");
 		
 		writeKeyword(tokenizer.tokenValue()); // if
 		tokenizer.advance();
@@ -380,12 +434,12 @@ public class CompilationEngine {
 			tokenizer.advance();
 		}
 		
-		w.write("</ifStatement>\n");
+		//w.write("</ifStatement>\n");
 		return;		
 	}
 	
 	private void compileWhile () throws IOException {
-		w.write("<whileStatement>\n");
+		//w.write("<whileStatement>\n");
 		
 		writeKeyword(tokenizer.tokenValue()); // while
 		tokenizer.advance();
@@ -406,12 +460,12 @@ public class CompilationEngine {
 		writeSymbol(tokenizer.tokenValue()); // }
 		tokenizer.advance();
 		
-		w.write("</whileStatement>\n");
+		//w.write("</whileStatement>\n");
 	}
 	
 	private void compileExpression() throws IOException { 
 		
-		w.write("<expression>\n");
+		//w.write("<expression>\n");
 		
 		// First we handle term
 		compileTerm();
@@ -427,19 +481,19 @@ public class CompilationEngine {
 		
 		// We are done with this expression and are now on an ending symbol
 		
-		w.write("</expression>\n");
+		//w.write("</expression>\n");
 		return;
 	}
 	
 	private void compileTerm() throws IOException {
 		
-		w.write("<term>\n");
+		//w.write("<term>\n");
 		
 		if (tokenizer.tokenType() == JackTokenizer.INT_CONST) {
 			// integerConstant
 			writeIntegerConstant(tokenizer.tokenValue());
 			tokenizer.advance();
-			w.write("</term>\n");
+			//w.write("</term>\n");
 			return;
 		}
 		
@@ -447,7 +501,7 @@ public class CompilationEngine {
 			// stringConstant
 			writeStringConstant(tokenizer.tokenValue());
 			tokenizer.advance();
-			w.write("</term>\n");
+			//w.write("</term>\n");
 			return;
 		}
 		
@@ -455,7 +509,7 @@ public class CompilationEngine {
 			// keywordConstant
 			writeKeyword(tokenizer.tokenValue());
 			tokenizer.advance();
-			w.write("</term>\n");
+			//w.write("</term>\n");
 			return;
 		}
 		
@@ -477,7 +531,7 @@ public class CompilationEngine {
 					writeSymbol(tokenizer.tokenValue()); // )
 					tokenizer.advance();
 					
-					w.write("</term>\n");
+					//w.write("</term>\n");
 					return;
 				} else {
 					// (className | varName) . subRoutineName ( expressionList )
@@ -495,7 +549,7 @@ public class CompilationEngine {
 					writeSymbol(tokenizer.tokenValue()); // )
 					tokenizer.advance();
 					
-					w.write("</term>\n");
+					//w.write("</term>\n");
 					return;
 				}
 				
@@ -510,12 +564,12 @@ public class CompilationEngine {
 				writeSymbol(tokenizer.tokenValue()); // ]
 				tokenizer.advance();
 				
-				w.write("</term>\n");
+				//w.write("</term>\n");
 				return;
 			} else {
 				// varName (current token is a symbol)
 				
-				w.write("</term>\n");
+				//w.write("</term>\n");
 				return;
 			}
 		}
@@ -533,7 +587,7 @@ public class CompilationEngine {
 				writeSymbol(tokenizer.tokenValue()); // )
 				tokenizer.advance();
 				
-				w.write("</term>\n");
+				//w.write("</term>\n");
 				return;
 			} else {
 				// unaryOp Term
@@ -543,20 +597,20 @@ public class CompilationEngine {
 				
 				compileTerm();
 				
-				w.write("</term>\n");
+				//w.write("</term>\n");
 				return;
 			}
 		}
 		
-		w.write("</term>\n"); // Reachable ?
+		//w.write("</term>\n"); // Reachable ?
 	}
 	
 	private void compileExpressionList() throws IOException {
-		w.write("<expressionList>\n");
+		//w.write("<expressionList>\n");
 		
 		if (tokenizer.tokenValue().equals(")")) {
 			// We have nothing in this expressionList
-			w.write("</expressionList>\n");
+			//w.write("</expressionList>\n");
 			return;
 		}
 		
@@ -572,16 +626,28 @@ public class CompilationEngine {
 			compileExpression();
 		}
 		
-		w.write("</expressionList>\n");
+		//w.write("</expressionList>\n");
 		return;
 	}
 	
+	private Kind getKind (String pKind) {
+		if (pKind.equals("static")) {
+			return Kind.STATIC;
+		} else if (pKind.equals("field")) {
+			return Kind.FIELD;
+		} else if (pKind.equals("var")) {
+			return Kind.VAR;
+		} else {
+			return Kind.ARG;
+		}
+	}
+	
 	private void writeIdentifier (String token) throws IOException {
-		w.write("<identifier> " + token + " </identifier>\n");
+		//w.write("<identifier> " + token + " </identifier>\n");
 	}
 	
 	private void writeKeyword (String token) throws IOException {
-		w.write("<keyword> " + token + " </keyword>\n");
+		//w.write("<keyword> " + token + " </keyword>\n");
 	}
 	
 	private void writeSymbol (String token) throws IOException {
@@ -596,14 +662,14 @@ public class CompilationEngine {
 			token = "&amp;";
 		}
 		
-		w.write("<symbol> " + token + " </symbol>\n");
+		//w.write("<symbol> " + token + " </symbol>\n");
 	}
 	
 	private void writeIntegerConstant (String token) throws IOException {
-		w.write("<integerConstant> " + token + " </integerConstant>\n");
+		//w.write("<integerConstant> " + token + " </integerConstant>\n");
 	}
 	
 	private void writeStringConstant (String token) throws IOException {
-		w.write("<stringConstant> " + token + " </stringConstant>\n");
+		//w.write("<stringConstant> " + token + " </stringConstant>\n");
 	}
 }
