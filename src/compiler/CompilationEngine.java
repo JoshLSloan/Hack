@@ -376,7 +376,7 @@ public class CompilationEngine {
 		//args = 0;
 				 
 		/* do */tokenizer.advance();
-		
+		//System.out.println(tokenizer.tokenValue());
 		 // subroutineName / className / varName
 		subClassName = tokenizer.tokenValue(); // 
 		tokenizer.advance();
@@ -396,11 +396,13 @@ public class CompilationEngine {
 			
 			/* ( */tokenizer.advance();
 			
+			System.out.println("SC: " + subClassName);
 			if (table.kindOf(subClassName) != Kind.NONE) {
 				// Its a varName and so is a method call
+				Kind k = table.kindOf(subClassName);
+				SegType seg = getSegType(k);
 				type = table.typeOf(subClassName);
-				SegType segment = getSegType(table.kindOf(type));
-				writer.writePush(segment, table.indexOf(subClassName)); // Push the calling object onto the stack
+				writer.writePush(seg, table.indexOf(subClassName)); // Push the calling object onto the stack
 				args++;
 			}
 		}
@@ -491,7 +493,6 @@ public class CompilationEngine {
 		}
 		
 		writer.writeLabel(ifEnd);
-		ifCounter = 0;
 		//w.write("</ifStatement>\n");
 		return;		
 	}
@@ -703,7 +704,6 @@ public class CompilationEngine {
 				return;
 			} else {
 				// varName (current token is a symbol)
-				System.out.println("ID: " + subClassName + " INDEX " + table.indexOf(subClassName));
 				writer.writePush(getSegType(table.kindOf(subClassName)), table.indexOf(subClassName));
 				//w.write("</term>\n");
 				return;
@@ -773,7 +773,6 @@ public class CompilationEngine {
 			compileExpression();
 			args++;
 		}
-		System.out.println("ARGS " + args);
 		//w.write("</expressionList>\n");
 		return;
 	}
