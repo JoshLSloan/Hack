@@ -12,6 +12,9 @@ public class CompilationEngine {
 	private SymbolTable table;
 	private String className;
 	
+	private int whileCounter = 0;
+	private int ifCounter = 0;
+	
 	private int args;
 	
 	private static final String op = "+-*/&|<>=";
@@ -279,7 +282,7 @@ public class CompilationEngine {
 			tokenizer.advance();
 			
 			 // varName
-			varType = tokenizer.tokenValue();
+			varName = tokenizer.tokenValue();
 			table.define(Kind.VAR, varType, varName);
 			
 			tokenizer.advance();
@@ -370,7 +373,7 @@ public class CompilationEngine {
 		
 		String subClassName, subName, type = null; 
 		boolean thisCall = false; // Will become true if this is a call to subroutine in this class
-		args = 0;
+		//args = 0;
 				 
 		/* do */tokenizer.advance();
 		
@@ -442,6 +445,10 @@ public class CompilationEngine {
 	private void compileIf () throws IOException {
 		//w.write("<ifStatement>\n");
 		
+		String ifFalse = "IF_FALSE" + ifCounter;
+		String ifEnd = "IF_END" + ifCounter;
+		ifCounter++;
+		
 		 // if
 		tokenizer.advance();
 		
@@ -450,13 +457,20 @@ public class CompilationEngine {
 		
 		compileExpression();
 		
+		writer.writeArithmetic(Arithmetic.NOT);
+		
 		 // )
 		tokenizer.advance();
 		
 		 // {
 		tokenizer.advance();
 		
+		writer.writeIf(ifFalse);
+		
 		compileStatements();
+		
+		writer.writeGoto(ifEnd);
+		writer.writeLabel(ifFalse);
 		
 		 // }
 		tokenizer.advance();
@@ -476,12 +490,20 @@ public class CompilationEngine {
 			tokenizer.advance();
 		}
 		
+		writer.writeLabel(ifEnd);
+		ifCounter = 0;
 		//w.write("</ifStatement>\n");
 		return;		
 	}
 	
 	private void compileWhile () throws IOException {
 		//w.write("<whileStatement>\n");
+		
+		String whileStart = "WHILE_EXP" + whileCounter;
+		String whileEnd = "WHILE_END" + whileCounter;
+		whileCounter++;
+		
+		writer.writeLabel(whileStart);
 		
 		 // while
 		tokenizer.advance();
@@ -491,6 +513,9 @@ public class CompilationEngine {
 		
 		compileExpression();
 		
+		writer.writeArithmetic(Arithmetic.NOT);
+		writer.writeIf(whileEnd);
+		
 		 // )
 		tokenizer.advance();
 		
@@ -499,6 +524,9 @@ public class CompilationEngine {
 		
 		compileStatements();
 		
+		
+		writer.writeGoto(whileStart);
+		writer.writeLabel(whileEnd);
 		 // }
 		tokenizer.advance();
 		
@@ -675,6 +703,7 @@ public class CompilationEngine {
 				return;
 			} else {
 				// varName (current token is a symbol)
+				System.out.println("ID: " + subClassName + " INDEX " + table.indexOf(subClassName));
 				writer.writePush(getSegType(table.kindOf(subClassName)), table.indexOf(subClassName));
 				//w.write("</term>\n");
 				return;
@@ -733,6 +762,7 @@ public class CompilationEngine {
 		compileExpression();
 		args++;
 		
+		
 		// If the next token is a , then we have another (, expression)
 		// Otherwise we are done with this expressionList
 		
@@ -741,8 +771,9 @@ public class CompilationEngine {
 			tokenizer.advance();
 
 			compileExpression();
+			args++;
 		}
-		
+		System.out.println("ARGS " + args);
 		//w.write("</expressionList>\n");
 		return;
 	}
