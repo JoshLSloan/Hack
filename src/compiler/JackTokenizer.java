@@ -228,6 +228,10 @@ public class JackTokenizer {
 		return tokens.get(currentToken).getToken();
 	}
 	
+	public String nextTokenValue () {
+		return tokens.get(currentToken + 1).getToken();
+	}
+	
 	private void testXML () {
 		
 		BufferedWriter w = null;
