@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JackAnalyzer {
+public class JackCompiler {
 
 	public static void main(String[] args) {
 		
@@ -44,7 +44,6 @@ public class JackAnalyzer {
 			name = myFiles.get(i).getName();
 			
 			CompilationEngine engine = new CompilationEngine(name.substring(0, name.length() - 5), token, writer);
-			
 			
 		}
 	}

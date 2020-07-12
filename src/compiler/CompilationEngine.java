@@ -355,6 +355,7 @@ public class CompilationEngine {
 			writer.writePush(SegType.TEMP, 0);
 			writer.writePop(SegType.POINTER, 1);
 			writer.writePop(SegType.THAT, 0);
+			
 		} else {
 			Kind k = table.kindOf(varName);
 			writer.writePop(getSegType(k), table.indexOf(varName));
