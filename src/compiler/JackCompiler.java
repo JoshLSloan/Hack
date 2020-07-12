@@ -43,7 +43,7 @@ public class JackAnalyzer {
 			
 			name = myFiles.get(i).getName();
 			
-			CompilationEngine engine = new CompilationEngine(name.substring(0, name.length() - 3), token, writer);
+			CompilationEngine engine = new CompilationEngine(name.substring(0, name.length() - 5), token, writer);
 			
 			
 		}

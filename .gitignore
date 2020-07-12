@@ -5,3 +5,10 @@
 .classpath
 .md
 .project
+Average/
+ComplexArrays/
+ConvertToBin/
+Pong/
+Seven/
+Square/
+*.gitignore
